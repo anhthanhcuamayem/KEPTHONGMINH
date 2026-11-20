@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f6f7fb">
+  <title>Nudge — Smart Reminder Clip</title>
+  <style>
+    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:#172033;background:#f6f7fb;font-synthesis:none}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;padding:24px 16px calc(32px + env(safe-area-inset-bottom));background:radial-gradient(ellipse at 85% 0,#e2eaff 0,transparent 38%),#f6f7fb}
+    main{max-width:510px;margin:0 auto}.top{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 22px}.brand{display:flex;gap:12px;align-items:center}.logo{width:46px;height:46px;border-radius:15px;background:#455be8;color:#fff;display:grid;place-items:center;font-size:24px;box-shadow:0 8px 20px #455be833}.brand h1{font-size:21px;margin:0;letter-spacing:-.5px}.brand p{margin:2px 0 0;color:#7b8497;font-size:12px}.badge{border-radius:99px;padding:7px 10px;background:#fff;color:#6d7587;font-size:11px;font-weight:700;box-shadow:0 2px 8px #1720330a}
+    .card{background:#fff;border:1px solid #e9ebf2;border-radius:22px;padding:20px;margin-bottom:14px;box-shadow:0 8px 28px #20305008}.status-card{padding:20px;display:flex;align-items:center;gap:15px}.status-icon{width:48px;height:48px;border-radius:16px;background:#eff1ff;color:#455be8;display:grid;place-items:center;font-size:22px}.status-copy{min-width:0;flex:1}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:#9299a9;font-weight:800}.status-copy strong{display:block;font-size:16px;margin-top:4px}.status-copy small{display:block;color:#858da0;margin-top:3px;line-height:1.4}.dot{width:9px;height:9px;border-radius:50%;background:#aab0bd}.dot.on{background:#2bb980;box-shadow:0 0 0 4px #e8f8f1}.dot.alert{background:#eea52d;box-shadow:0 0 0 4px #fff5df}
+    h2{font-size:15px;margin:0 0 15px;letter-spacing:-.2px}.row{display:flex;gap:10px}.row>*{flex:1;min-width:0}label{display:block;font-size:12px;font-weight:700;color:#666f82;margin-bottom:7px}select,input{width:100%;height:46px;border:1px solid #e1e4ed;border-radius:12px;background:#fff;padding:0 12px;color:#172033;font:inherit;font-size:14px;outline:none}select:focus,input:focus{border-color:#6476ef;box-shadow:0 0 0 3px #6476ef1c}.field{margin-bottom:14px}.toggle-line{display:flex;align-items:center;justify-content:space-between;color:#515a6c;font-size:13px;font-weight:600;margin:4px 0 17px}.switch{position:relative;width:44px;height:26px;flex:none}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;inset:0;border-radius:30px;background:#d9dce5;transition:.2s;cursor:pointer}.slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px #0002}.switch input:checked+.slider{background:#5266e8}.switch input:checked+.slider:before{transform:translateX(18px)}
+    button{border:0;border-radius:13px;height:48px;padding:0 16px;font:inherit;font-weight:750;cursor:pointer;transition:transform .08s,opacity .15s}button:active{transform:scale(.985)}button:disabled{opacity:.48;cursor:not-allowed}.primary{background:#455be8;color:#fff;width:100%;box-shadow:0 7px 16px #455be82a}.secondary{background:#eff1ff;color:#4055d9}.danger{background:#fff0f0;color:#d34d54}.outline{background:#fff;border:1px solid #e1e4ed;color:#4b5568}.button-row{display:flex;gap:9px}.button-row button{flex:1}.pattern-list{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.pattern{height:auto;min-height:82px;padding:10px 6px;background:#fafbfe;border:1px solid #e8eaf1;color:#394258;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center}.pattern .emoji{font-size:21px}.pattern span:last-child{font-size:11px}.pattern.selected{border-color:#6678ef;background:#f0f2ff;color:#4055d9;box-shadow:inset 0 0 0 1px #6678ef}.hint{color:#8b93a4;font-size:11px;line-height:1.55;margin:12px 2px 0}.demo{display:flex;align-items:center;gap:9px;padding:12px 14px;color:#6c7486;font-size:12px;background:#f0f2f7;border-radius:13px;margin:12px 0 0}.demo input{width:17px;height:17px;accent-color:#455be8}.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translate(-50%,20px);padding:12px 16px;border-radius:12px;background:#172033;color:#fff;font-size:13px;opacity:0;pointer-events:none;transition:.2s;max-width:calc(100% - 32px);text-align:center}.toast.show{opacity:1;transform:translate(-50%,0)}.hidden{display:none!important}
+    @media(min-width:600px){body{padding-top:40px}}
+  </style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <div class="brand"><div class="logo">⌁</div><div><h1>Nudge</h1><p>Smart Reminder Clip</p></div></div>
+    <span class="badge">BẢN THỬ NGHIỆM</span>
+  </header>
+
+  <section class="card status-card" aria-live="polite">
+    <div class="status-icon" id="statusIcon">⌁</div>
+    <div class="status-copy"><div class="eyebrow">Trạng thái thiết bị</div><strong id="statusTitle">Chưa kết nối</strong><small id="statusDetail">Kết nối Nudge-Clip để bắt đầu</small></div>
+    <span class="dot" id="statusDot"></span>
+  </section>
+
+  <section class="card">
+    <h2>Kết nối thiết bị</h2>
+    <div class="button-row"><button class="primary" id="connectBtn">Kết nối Bluetooth</button><button class="outline hidden" id="disconnectBtn">Ngắt</button></div>
+    <label class="demo"><input type="checkbox" id="demoToggle"> Dùng chế độ demo (không cần thiết bị)</label>
+  </section>
+
+  <section class="card">
+    <h2>Đặt lời nhắc</h2>
+    <div class="row">
+      <div class="field"><label for="minutes">Sau</label><select id="minutes"><option value="1">1 phút</option><option value="5">5 phút</option><option value="10" selected>10 phút</option><option value="15">15 phút</option><option value="30">30 phút</option><option value="60">1 giờ</option><option value="120">2 giờ</option><option value="custom">Tùy chỉnh…</option></select></div>
+      <div class="field hidden" id="customField"><label for="customMinutes">Số phút (1–1440)</label><input id="customMinutes" type="number" min="1" max="1440" value="20" inputmode="numeric"></div>
+      <div class="field"><label for="reminderPattern">Kiểu báo</label><select id="reminderPattern"><option value="1">Nhẹ nhàng · 2 tiếng</option><option value="2">Khẩn cấp · 4 tiếng</option><option value="3">Tìm thiết bị · 5 tiếng cao</option></select></div>
+    </div>
+    <div class="toggle-line"><span>Lặp lại sau mỗi khoảng thời gian</span><label class="switch"><input id="repeat" type="checkbox"><span class="slider"></span></label></div>
+    <button class="primary" id="setBtn">Đặt lời nhắc</button>
+    <p class="hint">Thiết bị sẽ chuyển sang chế độ tiết kiệm pin. Nhấn nút BOOT trên clip để mở lại Bluetooth.</p>
+  </section>
+
+  <section class="card">
+    <h2>Thử chuông ngay</h2>
+    <div class="pattern-list">
+      <button class="pattern selected" data-pattern="1"><span class="emoji">🌿</span><span>Nhẹ nhàng</span></button>
+      <button class="pattern" data-pattern="2"><span class="emoji">⚡</span><span>Khẩn cấp</span></button>
+      <button class="pattern" data-pattern="3"><span class="emoji">📍</span><span>Tìm thiết bị</span></button>
+    </div>
+    <div class="button-row" style="margin-top:12px"><button class="secondary" id="testBtn">Phát thử</button><button class="danger" id="stopBtn">Dừng lời nhắc</button></div>
+  </section>
+  <p class="hint">Web Bluetooth cần trang HTTPS hoặc localhost. Trên iPhone/iPad, trình duyệt hiện không hỗ trợ Web Bluetooth; hãy dùng Android Chrome để kết nối.</p>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+(() => {
+  const SERVICE_UUID='4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+  const COMMAND_UUID='beb5483e-36e1-4688-b7f5-ea07361b26a8';
+  const STATUS_UUID='beb5483f-36e1-4688-b7f5-ea07361b26a8';
+  const $=id=>document.getElementById(id);
+  let device=null, commandChar=null, statusChar=null, demo=false, selectedPattern=1, toastTimer;
+  const title=$('statusTitle'), detail=$('statusDetail'), dot=$('statusDot');
+  function toast(message){const el=$('toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2600)}
+  function setStatus(name,description,state='on') {title.textContent=name;detail.textContent=description;dot.className='dot '+state}
+  function connectedView(isConnected){$('connectBtn').classList.toggle('hidden',isConnected);$('disconnectBtn').classList.toggle('hidden',!isConnected)}
+  function showDeviceStatus(value){
+    const s=value.trim();
+    if(s==='OK:IDLE') setStatus('Sẵn sàng','Đang kết nối · chưa có lời nhắc','on');
+    else if(s==='OK:BUZZING') setStatus('Đang phát chuông','Nudge đang phát âm báo','alert');
+    else if(s.startsWith('OK:ARMED:')) setStatus('Đã đặt lời nhắc',`Chuông sẽ phát sau ${s.slice(9)}`,'on');
+    else if(s==='OK:SLEEPING') setStatus('Đang tiết kiệm pin','Nhấn nút BOOT trên clip để kết nối lại','alert');
+    else if(s.startsWith('ERR:')) toast('Thiết bị báo lỗi: '+s.slice(4));
+    else setStatus('Đã kết nối',s,'on');
+  }
+  async function send(command){
+    if(demo){demoCommand(command);return true}
+    if(!commandChar){toast('Hãy kết nối Nudge-Clip trước');return false}
+    try {const data=new TextEncoder().encode(command);if(commandChar.writeValueWithoutResponse) await commandChar.writeValueWithoutResponse(data);else await commandChar.writeValue(data);return true}
+    catch(e){toast('Gửi lệnh thất bại. Hãy kết nối lại.');return false}
+  }
+  function demoCommand(command){
+    if(command==='PING') return;
+    if(command.startsWith('SET:')){const p=command.split(':');setStatus('Đã đặt lời nhắc',`Chuông sau ${p[1]} phút · chế độ demo`,'on');setTimeout(()=>setStatus('Đang tiết kiệm pin','Chế độ demo · không có thiết bị thật','alert'),900);}
+    else if(command==='SLEEP')setStatus('Đang tiết kiệm pin','Chế độ demo','alert');
+    else if(command==='STOP')setStatus('Sẵn sàng','Chế độ demo · đã dừng lời nhắc','on');
+    else if(command.startsWith('BUZZ:')){setStatus('Đang phát chuông','Chế độ demo · không có thiết bị thật','alert');setTimeout(()=>setStatus('Sẵn sàng','Chế độ demo','on'),1500)}
+  }
+  async function connect(){
+    if(!navigator.bluetooth){toast('Trình duyệt này chưa hỗ trợ Web Bluetooth. Hãy thử Android Chrome.');return}
+    try{
+      device=await navigator.bluetooth.requestDevice({filters:[{name:'Nudge-Clip'}],optionalServices:[SERVICE_UUID]});
+      device.addEventListener('gattserverdisconnected',onDisconnect);
+      const server=await device.gatt.connect();const service=await server.getPrimaryService(SERVICE_UUID);
+      commandChar=await service.getCharacteristic(COMMAND_UUID);statusChar=await service.getCharacteristic(STATUS_UUID);
+      statusChar.addEventListener('characteristicvaluechanged',e=>showDeviceStatus(new TextDecoder().decode(e.target.value)));
+      await statusChar.startNotifications();
+      const value=await statusChar.readValue();showDeviceStatus(new TextDecoder().decode(value));
+      connectedView(true);toast('Đã kết nối với Nudge-Clip');
+    }catch(e){if(e.name!=='NotFoundError')toast('Không kết nối được. Hãy bật clip và thử lại.');}
+  }
+  function onDisconnect(){commandChar=null;statusChar=null;connectedView(false);setStatus('Đã ngắt kết nối','Nhấn Kết nối Bluetooth để thử lại','');}
+  async function disconnect(){if(demo){$('demoToggle').checked=false;toggleDemo();return}if(device?.gatt?.connected)device.gatt.disconnect();else onDisconnect()}
+  function toggleDemo(){demo=$('demoToggle').checked;if(demo){if(device?.gatt?.connected)device.gatt.disconnect();connectedView(true);$('connectBtn').textContent='Đang dùng demo';setStatus('Chế độ demo','Lệnh không được gửi tới thiết bị thật','alert');toast('Đã bật chế độ demo')}else{$('connectBtn').textContent='Kết nối Bluetooth';connectedView(false);setStatus('Chưa kết nối','Kết nối Nudge-Clip để bắt đầu','');}}
+  $('connectBtn').addEventListener('click',connect);$('disconnectBtn').addEventListener('click',disconnect);$('demoToggle').addEventListener('change',toggleDemo);
+  $('minutes').addEventListener('change',()=>{$('customField').classList.toggle('hidden',$('minutes').value!=='custom')});
+  document.querySelectorAll('.pattern').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.pattern').forEach(b=>b.classList.remove('selected'));button.classList.add('selected');selectedPattern=Number(button.dataset.pattern)}));
+  $('setBtn').addEventListener('click',async()=>{let minutes=$('minutes').value==='custom'?Number($('customMinutes').value):Number($('minutes').value);if(!Number.isInteger(minutes)||minutes<1||minutes>1440){toast('Số phút phải từ 1 đến 1440');return}await send(`SET:${minutes}:`+($('repeat').checked?'1':'0')+`:${$('reminderPattern').value}`)});
+  $('testBtn').addEventListener('click',()=>send(`BUZZ:${selectedPattern}`));$('stopBtn').addEventListener('click',()=>send('STOP'));
+})();
+</script>
+</body>
+</html>
