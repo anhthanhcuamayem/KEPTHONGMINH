@@ -66,7 +66,6 @@ class ServerCallbacks final : public NimBLEServerCallbacks {
   void onConnect(NimBLEServer *, NimBLEConnInfo &) override {
     connected = true;
     lastActivityMs = millis();
-    setLed(true);
   }
   void onDisconnect(NimBLEServer *, NimBLEConnInfo &, int) override {
     connected = false;
@@ -138,6 +137,8 @@ void enterLightSleep(uint32_t seconds = 0) {
     }
     Serial.flush();
     esp_light_sleep_start();
+    gpio_wakeup_disable(BUTTON_PIN);
+    while (digitalRead(static_cast<uint8_t>(BUTTON_PIN)) == LOW) { delay(15); }
 
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
     if (cause == ESP_SLEEP_WAKEUP_TIMER && timerArmed) {
@@ -145,6 +146,7 @@ void enterLightSleep(uint32_t seconds = 0) {
       if (repeatEnabled) {
         // Keep BLE off and sleep for the next interval. Button wake still works.
         seconds = static_cast<uint32_t>(timerMinutes) * 60U;
+        gpio_wakeup_enable(BUTTON_PIN, GPIO_INTR_LOW_LEVEL);
         continue;
       }
       timerArmed = 0;
@@ -165,7 +167,7 @@ void processCommand(const char *cmd) {
     int pattern = atoi(cmd + 5);
     if (pattern < 1 || pattern > 3) { publishStatus("ERR:PATTERN"); return; }
     playPattern(pattern);
-    publishStatus("OK:IDLE");
+    publishStatus(timerArmed ? String("OK:ARMED:") + timerMinutes + "m" : "OK:IDLE");
     return;
   }
   if (strncmp(cmd, "SET:", 4) == 0) {

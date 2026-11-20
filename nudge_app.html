@@ -18,12 +18,12 @@
 <body>
 <main>
   <header class="top">
-    <div class="brand"><div class="logo">⌁</div><div><h1>Nudge</h1><p>Smart Reminder Clip</p></div></div>
+    <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15c3.5 0 3.5-6 7-6s3.5 6 7 6"/><path d="M18 12l3 3-3 3"/></svg></div><div><h1>Nudge</h1><p>Smart Reminder Clip</p></div></div>
     <span class="badge">BẢN THỬ NGHIỆM</span>
   </header>
 
   <section class="card status-card" aria-live="polite">
-    <div class="status-icon" id="statusIcon">⌁</div>
+    <div class="status-icon" id="statusIcon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15c3.5 0 3.5-6 7-6s3.5 6 7 6"/><path d="M18 12l3 3-3 3"/></svg></div>
     <div class="status-copy"><div class="eyebrow">Trạng thái thiết bị</div><strong id="statusTitle">Chưa kết nối</strong><small id="statusDetail">Kết nối Nudge-Clip để bắt đầu</small></div>
     <span class="dot" id="statusDot"></span>
   </section>
@@ -64,13 +64,15 @@
   const COMMAND_UUID='beb5483e-36e1-4688-b7f5-ea07361b26a8';
   const STATUS_UUID='beb5483f-36e1-4688-b7f5-ea07361b26a8';
   const $=id=>document.getElementById(id);
-  let device=null, commandChar=null, statusChar=null, demo=false, selectedPattern=1, toastTimer;
+  let device=null, commandChar=null, statusChar=null, demo=false, selectedPattern=1, toastTimer, reminderStatusReceived=false;
   const title=$('statusTitle'), detail=$('statusDetail'), dot=$('statusDot');
   function toast(message){const el=$('toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2600)}
   function setStatus(name,description,state='on') {title.textContent=name;detail.textContent=description;dot.className='dot '+state}
   function connectedView(isConnected){$('connectBtn').classList.toggle('hidden',isConnected);$('disconnectBtn').classList.toggle('hidden',!isConnected)}
   function showDeviceStatus(value){
     const s=value.trim();
+    if(s.startsWith('OK:ARMED:')||s==='OK:SLEEPING') reminderStatusReceived=true;
+    else if(s==='OK:IDLE') reminderStatusReceived=false;
     if(s==='OK:IDLE') setStatus('Sẵn sàng','Đang kết nối · chưa có lời nhắc','on');
     else if(s==='OK:BUZZING') setStatus('Đang phát chuông','Nudge đang phát âm báo','alert');
     else if(s.startsWith('OK:ARMED:')) setStatus('Đã đặt lời nhắc',`Chuông sẽ phát sau ${s.slice(9)}`,'on');
@@ -104,7 +106,7 @@
       connectedView(true);toast('Đã kết nối với Nudge-Clip');
     }catch(e){if(e.name!=='NotFoundError')toast('Không kết nối được. Hãy bật clip và thử lại.');}
   }
-  function onDisconnect(){commandChar=null;statusChar=null;connectedView(false);setStatus('Đã ngắt kết nối','Nhấn Kết nối Bluetooth để thử lại','');}
+  function onDisconnect(){commandChar=null;statusChar=null;connectedView(false);if(reminderStatusReceived)setStatus('Đã đặt lời nhắc','Đang tiết kiệm pin','alert');else setStatus('Đã ngắt kết nối','Nhấn Kết nối Bluetooth để thử lại','');}
   async function disconnect(){if(demo){$('demoToggle').checked=false;toggleDemo();return}if(device?.gatt?.connected)device.gatt.disconnect();else onDisconnect()}
   function toggleDemo(){demo=$('demoToggle').checked;if(demo){if(device?.gatt?.connected)device.gatt.disconnect();connectedView(true);$('connectBtn').textContent='Đang dùng demo';setStatus('Chế độ demo','Lệnh không được gửi tới thiết bị thật','alert');toast('Đã bật chế độ demo')}else{$('connectBtn').textContent='Kết nối Bluetooth';connectedView(false);setStatus('Chưa kết nối','Kết nối Nudge-Clip để bắt đầu','');}}
   $('connectBtn').addEventListener('click',connect);$('disconnectBtn').addEventListener('click',disconnect);$('demoToggle').addEventListener('change',toggleDemo);
