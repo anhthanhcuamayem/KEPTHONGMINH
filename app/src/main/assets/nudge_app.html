@@ -1,0 +1,1072 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#090d16">
+  <title>Nudge — Smart Reminder Clip</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(18, 24, 38, 0.75);
+      --card-bg-solid: #121826;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-border-hover: rgba(99, 102, 241, 0.35);
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --text-muted: #64748b;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --primary-grad: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+      --primary-glow: 0 8px 24px -4px rgba(99, 102, 241, 0.5);
+      --emerald: #10b981;
+      --emerald-glow: 0 0 16px rgba(16, 185, 129, 0.4);
+      --amber: #f59e0b;
+      --amber-glow: 0 0 16px rgba(245, 158, 11, 0.4);
+      --danger: #f43f5e;
+      --danger-bg: rgba(244, 63, 94, 0.12);
+      --danger-border: rgba(244, 63, 94, 0.25);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Plus Jakarta Sans", Inter, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--text-main);
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(ellipse 90% 45% at 50% -10%, rgba(99, 102, 241, 0.22), transparent 70%),
+        radial-gradient(circle 320px at 100% 90%, rgba(139, 92, 246, 0.12), transparent 70%),
+        radial-gradient(circle 240px at 0% 40%, rgba(14, 165, 233, 0.08), transparent 70%);
+      background-attachment: fixed;
+      padding: 24px 16px calc(36px + env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    main {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Header */
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 4px 10px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .logo-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: var(--primary-grad);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      box-shadow: 0 8px 24px -2px rgba(99, 102, 241, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+      position: relative;
+    }
+    .logo-box svg {
+      width: 25px;
+      height: 25px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+    }
+    .brand-title h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.6px;
+      background: linear-gradient(180deg, #ffffff 30%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.15;
+    }
+    .brand-title p {
+      margin: 3px 0 0;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-sub);
+      letter-spacing: 0.1px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      backdrop-filter: blur(8px);
+    }
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 6px var(--primary);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 22px;
+      padding: 20px;
+      box-shadow: 0 14px 34px -8px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s ease;
+    }
+    .card-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .card-title-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      display: grid;
+      place-items: center;
+      color: var(--primary);
+    }
+    .card-title-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+    h2 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: #f1f5f9;
+    }
+
+    /* Status Card */
+    .status-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 20px;
+    }
+    .status-icon-wrap {
+      position: relative;
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+    }
+    .status-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: grid;
+      place-items: center;
+      color: var(--text-sub);
+      transition: all 0.3s ease;
+    }
+    .status-icon svg {
+      width: 25px;
+      height: 25px;
+      transition: transform 0.3s ease;
+    }
+    .status-copy {
+      min-width: 0;
+      flex: 1;
+    }
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+    .status-copy strong {
+      display: block;
+      font-size: 17px;
+      font-weight: 700;
+      margin-top: 4px;
+      color: #ffffff;
+      letter-spacing: -0.3px;
+    }
+    .status-copy small {
+      display: block;
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+    .status-dot-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #475569;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .dot.on {
+      background: var(--emerald);
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2), 0 0 12px var(--emerald);
+      animation: pulseGreen 2.2s infinite;
+    }
+    .dot.alert {
+      background: var(--amber);
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.25), 0 0 14px var(--amber);
+      animation: pulseAmber 1.6s infinite;
+    }
+
+    @keyframes pulseGreen {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6), 0 0 10px var(--emerald); }
+      70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0), 0 0 12px var(--emerald); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 0 10px var(--emerald); }
+    }
+    @keyframes pulseAmber {
+      0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7), 0 0 12px var(--amber); }
+      70% { box-shadow: 0 0 0 9px rgba(245, 158, 11, 0), 0 0 14px var(--amber); }
+      100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0), 0 0 12px var(--amber); }
+    }
+
+    /* Buttons */
+    button {
+      border: 0;
+      border-radius: 14px;
+      height: 50px;
+      padding: 0 20px;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: transform 0.12s ease, opacity 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      letter-spacing: -0.1px;
+    }
+    button:active {
+      transform: scale(0.975);
+    }
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .primary {
+      background: var(--primary-grad);
+      color: #ffffff;
+      width: 100%;
+      box-shadow: var(--primary-glow), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    }
+    .primary:hover {
+      box-shadow: 0 10px 28px -2px rgba(99, 102, 241, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+    }
+    .secondary {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: #a5b4fc;
+    }
+    .secondary:hover {
+      background: rgba(99, 102, 241, 0.22);
+      color: #c7d2fe;
+    }
+    .danger {
+      background: var(--danger-bg);
+      border: 1px solid var(--danger-border);
+      color: #fda4af;
+    }
+    .danger:hover {
+      background: rgba(244, 63, 94, 0.2);
+      color: #fff;
+    }
+    .outline {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+    }
+    .outline:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+    .button-row {
+      display: flex;
+      gap: 10px;
+    }
+    .button-row button {
+      flex: 1;
+    }
+
+    /* Form Fields */
+    .fields-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text-sub);
+      margin-bottom: 7px;
+      letter-spacing: 0.02em;
+    }
+    .select-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .select-wrap::after {
+      content: "";
+      position: absolute;
+      right: 16px;
+      width: 7px;
+      height: 7px;
+      border-right: 2px solid var(--text-sub);
+      border-bottom: 2px solid var(--text-sub);
+      transform: rotate(45deg);
+      pointer-events: none;
+      margin-top: -3px;
+    }
+    select, input[type="number"] {
+      width: 100%;
+      height: 48px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 0 38px 0 14px;
+      color: var(--text-main);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: all 0.2s ease;
+    }
+    select option {
+      background-color: var(--card-bg-solid);
+      color: #f1f5f9;
+      padding: 10px;
+    }
+    input[type="number"] {
+      padding-right: 14px;
+    }
+    select:focus, input[type="number"]:focus {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.08);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+
+    /* Quick Time Chips */
+    .quick-chips {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .quick-chips::-webkit-scrollbar { display: none; }
+    .chip {
+      height: 36px;
+      padding: 0 13px;
+      font-size: 12.5px;
+      font-weight: 700;
+      border-radius: 11px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-sub);
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .chip:hover {
+      background: rgba(255, 255, 255, 0.09);
+      color: #ffffff;
+    }
+    .chip.active {
+      background: rgba(99, 102, 241, 0.22);
+      border-color: var(--primary);
+      color: #c7d2fe;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.35);
+    }
+
+    /* Toggle Switch */
+    .toggle-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #e2e8f0;
+      font-size: 13.5px;
+      font-weight: 600;
+      margin: 4px 0 18px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+    }
+    .switch {
+      position: relative;
+      width: 46px;
+      height: 26px;
+      flex: none;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      inset: 0;
+      border-radius: 30px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+    .slider:before {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      left: 2px;
+      top: 2px;
+      border-radius: 50%;
+      background: #ffffff;
+      transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+    }
+    .switch input:checked + .slider {
+      background: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+    }
+    .switch input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Patterns Grid */
+    .pattern-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .pattern {
+      height: auto;
+      min-height: 98px;
+      padding: 14px 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      color: #94a3b8;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    .pattern:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #e2e8f0;
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+    .pattern .icon-wrap {
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.05);
+      transition: all 0.2s ease;
+    }
+    .pattern .icon-wrap svg {
+      width: 18px;
+      height: 18px;
+    }
+    .pattern-name {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: #e2e8f0;
+    }
+    .pattern-freq {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+    .pattern.selected {
+      background: rgba(99, 102, 241, 0.16);
+      border-color: var(--primary);
+      color: #e0e7ff;
+      box-shadow: 0 0 20px -2px rgba(99, 102, 241, 0.35), inset 0 0 0 1px var(--primary);
+    }
+    .pattern.selected .icon-wrap {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.6);
+    }
+    .pattern.selected .pattern-name {
+      color: #ffffff;
+    }
+    .pattern.selected .pattern-freq {
+      color: #a5b4fc;
+    }
+
+    /* Waveform visual bars */
+    .wave-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 2.5px;
+      height: 12px;
+      margin-top: 2px;
+    }
+    .wave-bar {
+      width: 2.5px;
+      background: currentColor;
+      border-radius: 2px;
+      opacity: 0.6;
+    }
+    .pattern.selected .wave-bar {
+      opacity: 1;
+    }
+
+    /* Hints & Toasts */
+    .hint {
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.55;
+      margin: 12px 2px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .hint svg {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      color: var(--text-sub);
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(24px + env(safe-area-inset-bottom));
+      transform: translate(-50%, 20px) scale(0.95);
+      padding: 12px 20px;
+      border-radius: 999px;
+      background: rgba(18, 24, 38, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #f8fafc;
+      font-size: 13.5px;
+      font-weight: 600;
+      letter-spacing: -0.1px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0,0,0,0.5);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      max-width: calc(100% - 32px);
+      text-align: center;
+      z-index: 1000;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0) scale(1);
+    }
+    .hidden {
+      display: none !important;
+    }
+
+    @media (min-width: 600px) {
+      body {
+        padding-top: 48px;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <!-- Header -->
+  <header class="top">
+    <div class="brand">
+      <div class="logo-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 15c3.5 0 3.5-6 7-6s3.5 6 7 6"/>
+          <path d="M18 12l3 3-3 3"/>
+        </svg>
+      </div>
+      <div class="brand-title">
+        <h1>Nudge</h1>
+        <p>Smart Reminder Clip · ESP32</p>
+      </div>
+    </div>
+    <span class="badge"><span class="badge-dot"></span>BLE 5.0</span>
+  </header>
+
+  <!-- Status Card -->
+  <section class="card status-card" aria-live="polite">
+    <div class="status-icon-wrap">
+      <div class="status-icon" id="statusIcon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 15c3.5 0 3.5-6 7-6s3.5 6 7 6"/>
+          <path d="M18 12l3 3-3 3"/>
+        </svg>
+      </div>
+    </div>
+    <div class="status-copy">
+      <div class="eyebrow">Trạng thái thiết bị</div>
+      <strong id="statusTitle">Chưa kết nối</strong>
+      <small id="statusDetail">Kết nối Nudge-Clip để bắt đầu</small>
+    </div>
+    <div class="status-dot-wrap">
+      <span class="dot" id="statusDot"></span>
+    </div>
+  </section>
+
+  <!-- Bluetooth Action Card -->
+  <section class="card">
+    <div class="card-title-row">
+      <div class="card-title-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10-5 5V2l5 5L7 17"/></svg>
+      </div>
+      <h2>Kết nối thiết bị</h2>
+    </div>
+    <div class="button-row">
+      <button class="primary" id="connectBtn">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10-5 5V2l5 5L7 17"/></svg>
+        <span>Kết nối Bluetooth</span>
+      </button>
+      <button class="danger outline hidden" id="disconnectBtn">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <span>Ngắt kết nối</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Reminder Settings Card -->
+  <section class="card">
+    <div class="card-title-row">
+      <div class="card-title-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <h2>Đặt lời nhắc</h2>
+    </div>
+
+    <!-- Quick preset chips -->
+    <label>Thời gian nhắc nhanh</label>
+    <div class="quick-chips" id="quickChips">
+      <button type="button" class="chip" data-val="1">1p</button>
+      <button type="button" class="chip" data-val="5">5p</button>
+      <button type="button" class="chip active" data-val="10">10p</button>
+      <button type="button" class="chip" data-val="15">15p</button>
+      <button type="button" class="chip" data-val="30">30p</button>
+      <button type="button" class="chip" data-val="60">1h</button>
+      <button type="button" class="chip" data-val="120">2h</button>
+      <button type="button" class="chip" data-val="custom">Tùy chỉnh</button>
+    </div>
+
+    <div class="fields-stack">
+      <div class="field">
+        <label for="minutes">Khoảng thời gian nhắc</label>
+        <div class="select-wrap">
+          <select id="minutes">
+            <option value="1">1 phút</option>
+            <option value="5">5 phút</option>
+            <option value="10" selected>10 phút</option>
+            <option value="15">15 phút</option>
+            <option value="30">30 phút</option>
+            <option value="60">1 giờ</option>
+            <option value="120">2 giờ</option>
+            <option value="custom">Tùy chỉnh số phút…</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field hidden" id="customField">
+        <label for="customMinutes">Số phút tùy chỉnh (1–1440)</label>
+        <input id="customMinutes" type="number" min="1" max="1440" value="20" inputmode="numeric" placeholder="Ví dụ: 25">
+      </div>
+
+      <div class="field">
+        <label for="reminderPattern">Kiểu âm báo</label>
+        <div class="select-wrap">
+          <select id="reminderPattern">
+            <option value="1">Nhẹ nhàng · 2 tiếng (1400 Hz)</option>
+            <option value="2">Khẩn cấp · 4 tiếng (1900 Hz)</option>
+            <option value="3">Tìm thiết bị · 5 tiếng cao (2600 Hz)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="toggle-line">
+      <span>Lặp lại sau mỗi khoảng thời gian</span>
+      <label class="switch">
+        <input id="repeat" type="checkbox">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <button class="primary" id="setBtn">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span>Đặt lời nhắc</span>
+    </button>
+    <div class="hint">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <span>Clip sẽ luôn phát Bluetooth cho đến khi kết nối điện thoại lần đầu. Sau đó, khi rảnh, clip sẽ tự chuyển sang chế độ tiết kiệm pin.</span>
+    </div>
+  </section>
+
+  <!-- Test Sounds Card -->
+  <section class="card">
+    <div class="card-title-row">
+      <div class="card-title-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+      </div>
+      <h2>Thử chuông ngay</h2>
+    </div>
+
+    <div class="pattern-list">
+      <button class="pattern selected" data-pattern="1">
+        <div class="icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10Z"/><path d="M2 21c0-3 1.9-5.4 5.1-6"/></svg>
+        </div>
+        <span class="pattern-name">Nhẹ nhàng</span>
+        <span class="pattern-freq">1400 Hz · 2 hồi</span>
+        <div class="wave-bars">
+          <span class="wave-bar" style="height:6px"></span>
+          <span class="wave-bar" style="height:12px"></span>
+        </div>
+      </button>
+
+      <button class="pattern" data-pattern="2">
+        <div class="icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <span class="pattern-name">Khẩn cấp</span>
+        <span class="pattern-freq">1900 Hz · 4 hồi</span>
+        <div class="wave-bars">
+          <span class="wave-bar" style="height:5px"></span>
+          <span class="wave-bar" style="height:10px"></span>
+          <span class="wave-bar" style="height:7px"></span>
+          <span class="wave-bar" style="height:12px"></span>
+        </div>
+      </button>
+
+      <button class="pattern" data-pattern="3">
+        <div class="icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.5"/><path d="M7.8 16.2a6 6 0 0 1 0-8.5"/><path d="M19.1 4.9a10 10 0 0 1 0 14.2"/><path d="M4.9 19.1a10 10 0 0 1 0-14.2"/></svg>
+        </div>
+        <span class="pattern-name">Tìm clip</span>
+        <span class="pattern-freq">2600 Hz · 5 hồi</span>
+        <div class="wave-bars">
+          <span class="wave-bar" style="height:4px"></span>
+          <span class="wave-bar" style="height:8px"></span>
+          <span class="wave-bar" style="height:12px"></span>
+          <span class="wave-bar" style="height:8px"></span>
+          <span class="wave-bar" style="height:4px"></span>
+        </div>
+      </button>
+    </div>
+
+    <div class="button-row" style="margin-top:14px">
+      <button class="secondary" id="testBtn">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        <span>Phát thử</span>
+      </button>
+      <button class="danger" id="stopBtn">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+        <span>Dừng chuông</span>
+      </button>
+    </div>
+  </section>
+
+  <div class="hint" style="justify-content:center;text-align:center;margin-bottom:8px">
+    <span>Web Bluetooth khả dụng trên Android Chrome hoặc ứng dụng NudgeClip APK</span>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+  const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+  const COMMAND_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+  const STATUS_UUID  = 'beb5483f-36e1-4688-b7f5-ea07361b26a8';
+  const $ = id => document.getElementById(id);
+
+  let device = null, commandChar = null, statusChar = null;
+  let selectedPattern = 1, toastTimer = null, reminderStatusReceived = false;
+
+  const title = $('statusTitle');
+  const detail = $('statusDetail');
+  const dot = $('statusDot');
+  const statusIcon = $('statusIcon');
+
+  function toast(message) {
+    const el = $('toast');
+    if (!el) return;
+    el.textContent = message;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+  }
+
+  function setStatus(name, description, state = 'on') {
+    if (title) title.textContent = name;
+    if (detail) detail.textContent = description;
+    if (dot) dot.className = 'dot ' + state;
+    if (statusIcon) {
+      statusIcon.style.color = state === 'alert' ? 'var(--amber)' : (state === 'on' ? 'var(--emerald)' : 'var(--text-sub)');
+      statusIcon.style.borderColor = state === 'alert' ? 'rgba(245, 158, 11, 0.35)' : (state === 'on' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 255, 255, 0.1)');
+      statusIcon.style.background = state === 'alert' ? 'rgba(245, 158, 11, 0.12)' : (state === 'on' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.05)');
+    }
+  }
+
+  function connectedView(isConnected) {
+    const cBtn = $('connectBtn');
+    const dBtn = $('disconnectBtn');
+    if (cBtn) cBtn.classList.toggle('hidden', isConnected);
+    if (dBtn) dBtn.classList.toggle('hidden', !isConnected);
+  }
+
+  function showDeviceStatus(value) {
+    const s = String(value || '').trim();
+    if (s.startsWith('OK:ARMED:') || s === 'OK:SLEEPING') reminderStatusReceived = true;
+    else if (s === 'OK:IDLE') reminderStatusReceived = false;
+
+    if (s === 'OK:IDLE') setStatus('Sẵn sàng', 'Đang kết nối · chưa có lời nhắc', 'on');
+    else if (s === 'OK:BUZZING') setStatus('Đang phát chuông', 'Nudge đang phát âm báo', 'alert');
+    else if (s.startsWith('OK:ARMED:')) setStatus('Đã đặt lời nhắc', `Chuông sẽ phát sau ${s.slice(9)}`, 'on');
+    else if (s === 'OK:SLEEPING') setStatus('Đang tiết kiệm pin', 'Nhấn nút BOOT trên clip để kết nối lại', 'alert');
+    else if (s.startsWith('ERR:')) toast('Thiết bị báo lỗi: ' + s.slice(4));
+    else setStatus('Đã kết nối', s, 'on');
+  }
+
+  async function send(command) {
+    if (window.NudgeBle) {
+      if (!window.NudgeBle.send(command)) {
+        toast('Chưa kết nối Nudge-Clip');
+        return false;
+      }
+      return true;
+    }
+    if (!commandChar) {
+      toast('Hãy kết nối Nudge-Clip trước');
+      return false;
+    }
+    try {
+      const data = new TextEncoder().encode(command);
+      if (commandChar.writeValueWithoutResponse) {
+        await commandChar.writeValueWithoutResponse(data);
+      } else {
+        await commandChar.writeValue(data);
+      }
+      return true;
+    } catch (e) {
+      toast('Gửi lệnh thất bại. Hãy kết nối lại.');
+      return false;
+    }
+  }
+
+  async function connect() {
+    if (window.NudgeBle) {
+      window.NudgeBle.connect();
+      return;
+    }
+    if (!navigator.bluetooth) {
+      toast('Trình duyệt này chưa hỗ trợ Web Bluetooth. Hãy thử Android Chrome.');
+      return;
+    }
+    try {
+      device = await navigator.bluetooth.requestDevice({
+        filters: [{ name: 'Nudge-Clip' }],
+        optionalServices: [SERVICE_UUID]
+      });
+      device.addEventListener('gattserverdisconnected', onDisconnect);
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService(SERVICE_UUID);
+      commandChar = await service.getCharacteristic(COMMAND_UUID);
+      statusChar = await service.getCharacteristic(STATUS_UUID);
+      statusChar.addEventListener('characteristicvaluechanged', e => {
+        showDeviceStatus(new TextDecoder().decode(e.target.value));
+      });
+      await statusChar.startNotifications();
+      const value = await statusChar.readValue();
+      showDeviceStatus(new TextDecoder().decode(value));
+      connectedView(true);
+      toast('Đã kết nối với Nudge-Clip');
+    } catch (e) {
+      if (e.name !== 'NotFoundError') {
+        toast('Không kết nối được. Hãy bật clip và thử lại.');
+      }
+    }
+  }
+
+  function onDisconnect() {
+    commandChar = null;
+    statusChar = null;
+    connectedView(false);
+    if (reminderStatusReceived) {
+      setStatus('Đã đặt lời nhắc', 'Đang tiết kiệm pin', 'alert');
+    } else {
+      setStatus('Đã ngắt kết nối', 'Nhấn Kết nối Bluetooth để thử lại', '');
+    }
+  }
+
+  async function disconnect() {
+    if (window.NudgeBle) {
+      window.NudgeBle.disconnect();
+      return;
+    }
+    if (device?.gatt?.connected) {
+      device.gatt.disconnect();
+    } else {
+      onDisconnect();
+    }
+  }
+
+  // Expose callbacks to global window for Android WebView compatibility
+  window.toast = toast;
+  window.connectedView = connectedView;
+  window.showDeviceStatus = showDeviceStatus;
+  window.onDisconnect = onDisconnect;
+
+  // Event Listeners
+  const connectBtn = $('connectBtn');
+  const disconnectBtn = $('disconnectBtn');
+  const minutesSelect = $('minutes');
+  const customField = $('customField');
+  const customMinutes = $('customMinutes');
+  const quickChips = document.querySelectorAll('.chip');
+  const reminderPatternSelect = $('reminderPattern');
+  const patternButtons = document.querySelectorAll('.pattern');
+
+  if (connectBtn) connectBtn.addEventListener('click', connect);
+  if (disconnectBtn) disconnectBtn.addEventListener('click', disconnect);
+
+  // Sync Select & Quick Chips
+  function syncChips(val) {
+    quickChips.forEach(chip => {
+      chip.classList.toggle('active', chip.dataset.val === String(val));
+    });
+  }
+
+  if (minutesSelect) {
+    minutesSelect.addEventListener('change', () => {
+      const val = minutesSelect.value;
+      if (customField) customField.classList.toggle('hidden', val !== 'custom');
+      syncChips(val);
+    });
+  }
+
+  quickChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const val = chip.dataset.val;
+      if (minutesSelect) {
+        minutesSelect.value = val;
+        minutesSelect.dispatchEvent(new Event('change'));
+      }
+    });
+  });
+
+  // Sync Pattern Buttons with Pattern Select
+  function syncPatternView(patternNum) {
+    selectedPattern = patternNum;
+    patternButtons.forEach(b => {
+      b.classList.toggle('selected', Number(b.dataset.pattern) === patternNum);
+    });
+    if (reminderPatternSelect) {
+      reminderPatternSelect.value = String(patternNum);
+    }
+  }
+
+  patternButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      syncPatternView(Number(button.dataset.pattern));
+    });
+  });
+
+  if (reminderPatternSelect) {
+    reminderPatternSelect.addEventListener('change', () => {
+      syncPatternView(Number(reminderPatternSelect.value));
+    });
+  }
+
+  // Set reminder
+  const setBtn = $('setBtn');
+  if (setBtn) {
+    setBtn.addEventListener('click', async () => {
+      let minutes = minutesSelect.value === 'custom'
+        ? Number(customMinutes.value)
+        : Number(minutesSelect.value);
+
+      if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) {
+        toast('Số phút phải từ 1 đến 1440');
+        return;
+      }
+      const repeatVal = $('repeat')?.checked ? '1' : '0';
+      const patVal = $('reminderPattern')?.value || selectedPattern;
+      const success = await send(`SET:${minutes}:${repeatVal}:${patVal}`);
+      if (success) {
+        toast(`Đã đặt lời nhắc sau ${minutes} phút!`);
+      }
+    });
+  }
+
+  // Test & Stop
+  const testBtn = $('testBtn');
+  if (testBtn) testBtn.addEventListener('click', () => send(`BUZZ:${selectedPattern}`));
+
+  const stopBtn = $('stopBtn');
+  if (stopBtn) stopBtn.addEventListener('click', async () => {
+    const success = await send('STOP');
+    if (success) toast('Đã gửi lệnh dừng');
+  });
+})();
+</script>
+</body>
+</html>

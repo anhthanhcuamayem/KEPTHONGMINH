@@ -1,0 +1,20 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'vn.nudge.clip'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'vn.nudge.clip'
+        minSdk 23
+        targetSdk 32
+        versionCode 1
+        versionName '1.0'
+    }
+}
+
+tasks.register('syncController', Copy) {
+    from('../nudge_app.html')
+    into('src/main/assets')
+}
+preBuild.dependsOn syncController

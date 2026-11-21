@@ -7,7 +7,8 @@
 static constexpr uint8_t BUZZER_PIN = 4;
 static constexpr uint8_t LED_PIN = 8;       // onboard LED, active LOW
 static constexpr gpio_num_t BUTTON_PIN = GPIO_NUM_9; // BOOT, active LOW
-static constexpr uint32_t BLE_IDLE_TIMEOUT_MS = 30000;
+static constexpr uint32_t BLE_IDLE_TIMEOUT_MS = 2000;
+static constexpr uint32_t BLE_SLEEP_SECONDS = 8;
 static constexpr uint16_t ADV_MIN = 1600;   // 1000 ms, units of 0.625 ms
 static constexpr uint16_t ADV_MAX = 2000;   // 1250 ms
 
@@ -21,6 +22,9 @@ RTC_DATA_ATTR uint16_t timerMinutes = 0;
 RTC_DATA_ATTR uint8_t repeatEnabled = 0;
 RTC_DATA_ATTR uint8_t alertPattern = 1;
 RTC_DATA_ATTR uint8_t timerArmed = 0;
+// Keep BLE discoverable until a phone has connected at least once. This flag
+// survives the periodic light-sleep cycles so normal reconnection still works.
+RTC_DATA_ATTR uint8_t phoneConnectedOnce = 0;
 
 NimBLEServer *bleServer = nullptr;
 NimBLECharacteristic *statusCharacteristic = nullptr;
@@ -28,6 +32,7 @@ volatile bool connected = false;
 volatile bool commandPending = false;
 char commandBuffer[64] = {0};
 uint32_t lastActivityMs = 0;
+uint32_t timerDeadlineMs = 0;
 bool bleReady = false;
 
 void setLed(bool on) { digitalWrite(LED_PIN, on ? LOW : HIGH); }
@@ -65,12 +70,19 @@ void beepConfirmation() {
 class ServerCallbacks final : public NimBLEServerCallbacks {
   void onConnect(NimBLEServer *, NimBLEConnInfo &) override {
     connected = true;
+    phoneConnectedOnce = 1;
     lastActivityMs = millis();
   }
   void onDisconnect(NimBLEServer *, NimBLEConnInfo &, int) override {
     connected = false;
     setLed(false);
-    if (bleReady) NimBLEDevice::getAdvertising()->start();
+    if (bleReady) {
+#if CONFIG_BT_NIMBLE_EXT_ADV
+      NimBLEDevice::startAdvertising(0);
+#else
+      NimBLEDevice::startAdvertising();
+#endif
+    }
   }
 };
 
@@ -101,11 +113,28 @@ void startBle() {
       STATUS_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
   statusCharacteristic->setValue("OK:IDLE");
   service->start();
+#if CONFIG_BT_NIMBLE_EXT_ADV
+  NimBLEExtAdvertising *advertising = NimBLEDevice::getAdvertising();
+  NimBLEExtAdvertisement advertisement;
+  advertisement.setLegacyAdvertising(true);
+  advertisement.setConnectable(true);
+  advertisement.setScannable(true);
+  advertisement.setFlags(0x06); // General discoverable, BR/EDR not supported.
+  advertisement.setMinInterval(ADV_MIN);
+  advertisement.setMaxInterval(ADV_MAX);
+  advertisement.addServiceUUID(SERVICE_UUID);
+  NimBLEExtAdvertisement scanResponse;
+  scanResponse.setName(DEVICE_NAME);
+  advertising->setInstanceData(0, advertisement);
+  advertising->setScanResponseData(0, scanResponse);
+  advertising->start(0);
+#else
   NimBLEAdvertising *advertising = NimBLEDevice::getAdvertising();
   advertising->setMinInterval(ADV_MIN);
   advertising->setMaxInterval(ADV_MAX);
   advertising->addServiceUUID(SERVICE_UUID);
   advertising->start();
+#endif
   bleReady = true;
   lastActivityMs = millis();
   publishStatus(timerArmed ? String("OK:ARMED:") + timerMinutes + "m" : "OK:IDLE");
@@ -120,39 +149,18 @@ void stopBle() {
   bleReady = false;
 }
 
-void enterLightSleep(uint32_t seconds = 0) {
+void enterLightSleep(uint32_t seconds) {
   if (bleReady) stopBle();
   setLed(false);
   noTone(BUZZER_PIN);
   pinMode(static_cast<uint8_t>(BUTTON_PIN), INPUT_PULLUP);
   gpio_wakeup_enable(BUTTON_PIN, GPIO_INTR_LOW_LEVEL);
   esp_sleep_enable_gpio_wakeup();
-  while (true) {
-    if (seconds > 0) {
-      esp_sleep_enable_timer_wakeup(static_cast<uint64_t>(seconds) * 1000000ULL);
-    } else {
-      // Wake sources remain configured after light sleep; clear an old timer
-      // when this sleep is meant to be woken only by the BOOT button.
-      esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
-    }
-    Serial.flush();
-    esp_light_sleep_start();
-    gpio_wakeup_disable(BUTTON_PIN);
-    while (digitalRead(static_cast<uint8_t>(BUTTON_PIN)) == LOW) { delay(15); }
-
-    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-    if (cause == ESP_SLEEP_WAKEUP_TIMER && timerArmed) {
-      playPattern(alertPattern);
-      if (repeatEnabled) {
-        // Keep BLE off and sleep for the next interval. Button wake still works.
-        seconds = static_cast<uint32_t>(timerMinutes) * 60U;
-        gpio_wakeup_enable(BUTTON_PIN, GPIO_INTR_LOW_LEVEL);
-        continue;
-      }
-      timerArmed = 0;
-    }
-    break;
-  }
+  esp_sleep_enable_timer_wakeup(static_cast<uint64_t>(seconds) * 1000000ULL);
+  Serial.flush();
+  esp_light_sleep_start();
+  gpio_wakeup_disable(BUTTON_PIN);
+  while (digitalRead(static_cast<uint8_t>(BUTTON_PIN)) == LOW) { delay(15); }
   startBle();
   lastActivityMs = millis();
 }
@@ -181,24 +189,27 @@ void processCommand(const char *cmd) {
     repeatEnabled = repeat;
     alertPattern = pattern;
     timerArmed = 1;
+    timerDeadlineMs = millis() + static_cast<uint32_t>(timerMinutes) * 60UL * 1000UL;
     beepConfirmation();
     publishStatus(String("OK:ARMED:") + timerMinutes + "m");
-    delay(120);
-    publishStatus("OK:SLEEPING");
-    enterLightSleep(static_cast<uint32_t>(timerMinutes) * 60U);
     return;
   }
   if (strcmp(cmd, "STOP") == 0) {
     timerArmed = 0;
     timerMinutes = 0;
     repeatEnabled = 0;
+    timerDeadlineMs = 0;
     publishStatus("OK:IDLE");
     return;
   }
   if (strcmp(cmd, "SLEEP") == 0) {
+    if (!phoneConnectedOnce) {
+      publishStatus("ERR:PAIR_FIRST");
+      return;
+    }
     publishStatus("OK:SLEEPING");
     delay(120);
-    enterLightSleep();
+    enterLightSleep(BLE_SLEEP_SECONDS);
     return;
   }
   publishStatus("ERR:COMMAND");
@@ -214,11 +225,7 @@ void setup() {
   Serial.begin(115200);
   delay(100);
 
-  esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-  if (cause == ESP_SLEEP_WAKEUP_TIMER && timerArmed) {
-    playPattern(alertPattern);
-    if (!repeatEnabled) timerArmed = 0;
-  }
+  if (timerArmed) timerDeadlineMs = millis() + static_cast<uint32_t>(timerMinutes) * 60UL * 1000UL;
   startBle();
 }
 
@@ -233,13 +240,22 @@ void loop() {
     processCommand(local);
   }
 
-  if (bleReady && !connected && millis() - lastActivityMs >= BLE_IDLE_TIMEOUT_MS) {
-    if (timerArmed) {
-      publishStatus("OK:SLEEPING");
-      enterLightSleep(static_cast<uint32_t>(timerMinutes) * 60U);
+  if (timerArmed && static_cast<int32_t>(millis() - timerDeadlineMs) >= 0) {
+    playPattern(alertPattern);
+    if (repeatEnabled) {
+      timerDeadlineMs = millis() + static_cast<uint32_t>(timerMinutes) * 60UL * 1000UL;
+      publishStatus(String("OK:ARMED:") + timerMinutes + "m");
     } else {
-      enterLightSleep();
+      timerArmed = 0;
+      timerMinutes = 0;
+      timerDeadlineMs = 0;
+      publishStatus("OK:IDLE");
     }
+    lastActivityMs = millis();
+  }
+
+  if (bleReady && phoneConnectedOnce && !connected && !timerArmed && millis() - lastActivityMs >= BLE_IDLE_TIMEOUT_MS) {
+    enterLightSleep(BLE_SLEEP_SECONDS);
   }
   delay(10);
 }

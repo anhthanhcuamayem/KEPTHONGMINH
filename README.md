@@ -5,7 +5,7 @@ Prototype for ESP32-C3 SuperMini with a single-file mobile Web Bluetooth control
 ## Files
 
 - `nudge_esp32c3.ino` — Arduino firmware.
-- `nudge_app.html` — Vietnamese mobile controller and demo mode.
+- `nudge_app.html` — Vietnamese mobile controller.
 
 ## Firmware setup
 
@@ -32,9 +32,9 @@ Confirm your specific SuperMini board's pin labels and boost output voltage befo
 
 ## Phone app
 
-Open `nudge_app.html` in a Web Bluetooth-capable browser. Web Bluetooth generally requires a secure page (HTTPS) or localhost. On Android, Chrome is a typical option. iOS browsers do not currently expose the Web Bluetooth API. The **demo mode** operates the UI without a physical clip.
+Open `nudge_app.html` in a Web Bluetooth-capable browser. Web Bluetooth generally requires a secure page (HTTPS) or localhost. On Android, Chrome is a typical option. iOS browsers do not currently expose the Web Bluetooth API. The Android APK bundles the controller UI and uses native Bluetooth LE.
 
-Choose a delay (1–1440 minutes), optional repeat, and alert pattern, then tap **Đặt lời nhắc**. The clip stops BLE and enters Light Sleep. Press its BOOT button to wake it and advertise again. After a one-shot reminder, BLE becomes available for 30 seconds; repeating reminders continue sleeping between alerts.
+Choose a delay (1–1440 minutes), optional repeat, and alert pattern, then tap **Đặt lời nhắc**. BLE stays available while the reminder is armed so the reminder can still be changed or stopped from the app. Before its first phone connection, the clip remains discoverable and does not enter light sleep. After connecting once, when disconnected and idle it advertises for 2 seconds, sleeps for 8 seconds, then advertises again automatically. BOOT can also wake it during that short sleep.
 
 ## BLE protocol
 
@@ -47,4 +47,14 @@ Choose a delay (1–1440 minutes), optional repeat, and alert pattern, then tap 
 
 ## Battery target
 
-The firmware lowers the CPU clock to 80 MHz, advertises at 0 dBm with a 1.0–1.25 second interval, and deinitializes NimBLE before Light Sleep. A six-day runtime is a design target, not a guaranteed result: the SuperMini regulator, USB/LED circuitry, boost converter quiescent current, buzzer duty cycle, and cell condition affect runtime. Measure current on the assembled power chain and verify that the board's GPIO wake and sleep behavior match the specific module revision.
+The firmware lowers the CPU clock to 80 MHz, advertises at 0 dBm with a 1.0–1.25 second interval, and takes an 8-second Light Sleep break after each 2 seconds of disconnected idle advertising. A 2–3 day runtime depends on battery capacity and the measured average current of the complete board, regulator, and boost-converter power path; it cannot be guaranteed from firmware settings alone. Measure current on the assembled unit to confirm the runtime.
+
+## Android APK
+
+The Android app bundles the controller UI and uses Android's native Bluetooth LE API to connect to `Nudge-Clip` (Web Bluetooth is not available inside Android WebView). Build a debug APK with Android SDK 35 and JDK 17 or newer:
+
+```sh
+./gradlew assembleDebug
+```
+
+The APK is written to `app/build/outputs/apk/debug/app-debug.apk`. On first connection, grant the requested Bluetooth permissions and turn on Bluetooth.
