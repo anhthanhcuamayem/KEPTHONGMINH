@@ -13,6 +13,7 @@ static constexpr uint16_t ADV_MIN = 1600;   // 1000 ms, units of 0.625 ms
 static constexpr uint16_t ADV_MAX = 2000;   // 1250 ms
 
 static const char *DEVICE_NAME = "Nudge-Clip";
+String advertisedDeviceName = DEVICE_NAME;
 static const char *SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
 static const char *COMMAND_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
 static const char *STATUS_UUID  = "beb5483f-36e1-4688-b7f5-ea07361b26a8";
@@ -102,6 +103,10 @@ class CommandCallbacks final : public NimBLECharacteristicCallbacks {
 void startBle() {
   if (bleReady) return;
   NimBLEDevice::init(DEVICE_NAME);
+  String mac = NimBLEDevice::getAddress().toString().c_str();
+  mac.replace(":", "");
+  advertisedDeviceName = String("Nudge-") + mac.substring(mac.length() - 4);
+  NimBLEDevice::setDeviceName(advertisedDeviceName.c_str());
   NimBLEDevice::setPower(ESP_PWR_LVL_N0); // 0 dBm
   bleServer = NimBLEDevice::createServer();
   bleServer->setCallbacks(new ServerCallbacks());
@@ -124,7 +129,7 @@ void startBle() {
   advertisement.setMaxInterval(ADV_MAX);
   advertisement.addServiceUUID(SERVICE_UUID);
   NimBLEExtAdvertisement scanResponse;
-  scanResponse.setName(DEVICE_NAME);
+  scanResponse.setName(advertisedDeviceName.c_str());
   advertising->setInstanceData(0, advertisement);
   advertising->setScanResponseData(0, scanResponse);
   advertising->start(0);
@@ -132,6 +137,7 @@ void startBle() {
   NimBLEAdvertising *advertising = NimBLEDevice::getAdvertising();
   advertising->setMinInterval(ADV_MIN);
   advertising->setMaxInterval(ADV_MAX);
+  advertising->setName(advertisedDeviceName.c_str());
   advertising->addServiceUUID(SERVICE_UUID);
   advertising->start();
 #endif

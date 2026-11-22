@@ -840,6 +840,7 @@
 
   let device = null, commandChar = null, statusChar = null;
   let selectedPattern = 1, toastTimer = null, reminderStatusReceived = false;
+  let selectedDeviceName = 'Nudge';
 
   const title = $('statusTitle');
   const detail = $('statusDetail');
@@ -869,7 +870,11 @@
   function connectedView(isConnected) {
     const cBtn = $('connectBtn');
     const dBtn = $('disconnectBtn');
-    if (cBtn) cBtn.classList.toggle('hidden', isConnected);
+    if (cBtn) {
+      cBtn.classList.remove('hidden');
+      const label = cBtn.querySelector('span');
+      if (label) label.textContent = isConnected ? 'Kết nối / chọn thêm Nudge' : 'Kết nối Bluetooth';
+    }
     if (dBtn) dBtn.classList.toggle('hidden', !isConnected);
   }
 
@@ -878,10 +883,10 @@
     if (s.startsWith('OK:ARMED:') || s === 'OK:SLEEPING') reminderStatusReceived = true;
     else if (s === 'OK:IDLE') reminderStatusReceived = false;
 
-    if (s === 'OK:IDLE') setStatus('Sẵn sàng', 'Đang kết nối · chưa có lời nhắc', 'on');
-    else if (s === 'OK:BUZZING') setStatus('Đang phát chuông', 'Nudge đang phát âm báo', 'alert');
+    if (s === 'OK:IDLE') setStatus('Sẵn sàng', `Đang điều khiển ${selectedDeviceName} · chưa có lời nhắc`, 'on');
+    else if (s === 'OK:BUZZING') setStatus('Đang phát chuông', `${selectedDeviceName} đang phát âm báo`, 'alert');
     else if (s.startsWith('OK:ARMED:')) setStatus('Đã đặt lời nhắc', `Chuông sẽ phát sau ${s.slice(9)}`, 'on');
-    else if (s === 'OK:SLEEPING') setStatus('Đang tiết kiệm pin', 'Nhấn nút BOOT trên clip để kết nối lại', 'alert');
+    else if (s === 'OK:SLEEPING') setStatus('Đang tiết kiệm pin', `Nhấn nút BOOT trên ${selectedDeviceName} để kết nối lại`, 'alert');
     else if (s.startsWith('ERR:')) toast('Thiết bị báo lỗi: ' + s.slice(4));
     else setStatus('Đã kết nối', s, 'on');
   }
@@ -923,7 +928,7 @@
     }
     try {
       device = await navigator.bluetooth.requestDevice({
-        filters: [{ name: 'Nudge-Clip' }],
+        filters: [{ namePrefix: 'Nudge-' }],
         optionalServices: [SERVICE_UUID]
       });
       device.addEventListener('gattserverdisconnected', onDisconnect);
@@ -938,7 +943,8 @@
       const value = await statusChar.readValue();
       showDeviceStatus(new TextDecoder().decode(value));
       connectedView(true);
-      toast('Đã kết nối với Nudge-Clip');
+      selectedDeviceName = device.name || 'Nudge';
+      toast(`Đã kết nối với ${selectedDeviceName}`);
     } catch (e) {
       if (e.name !== 'NotFoundError') {
         toast('Không kết nối được. Hãy bật clip và thử lại.');
@@ -955,6 +961,11 @@
     } else {
       setStatus('Đã ngắt kết nối', 'Nhấn Kết nối Bluetooth để thử lại', '');
     }
+  }
+
+  function selectedDeviceChanged(name) {
+    selectedDeviceName = String(name || 'Nudge');
+    detail.textContent = `Đang kết nối với ${selectedDeviceName}…`;
   }
 
   async function disconnect() {
@@ -974,6 +985,7 @@
   window.connectedView = connectedView;
   window.showDeviceStatus = showDeviceStatus;
   window.onDisconnect = onDisconnect;
+  window.selectedDeviceChanged = selectedDeviceChanged;
 
   // Event Listeners
   const connectBtn = $('connectBtn');

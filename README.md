@@ -51,7 +51,7 @@ The firmware lowers the CPU clock to 80 MHz, advertises at 0 dBm with a 1.0–1.
 
 ## Android APK
 
-The Android app bundles the controller UI and uses Android's native Bluetooth LE API to connect to `Nudge-Clip` (Web Bluetooth is not available inside Android WebView). Build a debug APK with Android SDK 35 and JDK 17 or newer:
+The Android app bundles the controller UI and uses Android's native Bluetooth LE API to connect to Nudge clips (Web Bluetooth is not available inside Android WebView). Each clip advertises a short unique suffix derived from its BLE address. The app can keep multiple clips connected, lets you select the target for commands, and lets you assign each a phone-local nickname. Build a debug APK with Android SDK 35 and JDK 17 or newer:
 
 ```sh
 ./gradlew assembleDebug
